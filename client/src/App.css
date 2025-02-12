@@ -1,0 +1,53 @@
+.App {
+    text-align: center;
+    padding: 20px;
+}
+
+.scan-button {
+    padding: 12px 24px;
+    font-size: 18px;
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    margin: 20px 0;
+}
+
+.scan-button:disabled {
+    background-color: #cccccc;
+    cursor: not-allowed;
+}
+
+.token-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 20px;
+    padding: 20px;
+}
+
+.token-card {
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 15px;
+    position: relative;
+}
+
+.token-card .rank {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background-color: #4CAF50;
+    color: white;
+    padding: 5px 10px;
+    border-radius: 4px;
+}
+
+.metrics {
+    text-align: left;
+    margin-top: 10px;
+}
+
+.metrics div {
+    margin: 5px 0;
+} 

@@ -50,4 +50,14 @@
 
 .metrics div {
     margin: 5px 0;
+}
+
+.error-message {
+    background-color: #ffebee;
+    color: #c62828;
+    padding: 12px;
+    border-radius: 4px;
+    margin: 16px 0;
+    text-align: center;
+    border: 1px solid #ef9a9a;
 } 

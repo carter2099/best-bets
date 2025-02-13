@@ -7,6 +7,8 @@ interface TokenCardProps {
 }
 
 function TokenCard({ token, rank }: TokenCardProps) {
+    const [copyConfirm, setCopyConfirm] = React.useState(false);
+
     const formatNumber = (num: number | null) => {
         if (num == null) return '$0.00';
         return new Intl.NumberFormat('en-US', {
@@ -31,12 +33,35 @@ function TokenCard({ token, rank }: TokenCardProps) {
         return formatNumber(price);
     };
 
+    const formatAddress = (address: string) => {
+        if (!address) return '';
+        const start = address.slice(0, 8);
+        const end = address.slice(-8);
+        return `${start}...${end}`;
+    };
+
+    const copyToClipboard = (text: string) => {
+        navigator.clipboard.writeText(text);
+        setCopyConfirm(true);
+        setTimeout(() => setCopyConfirm(false), 1500); // Reset after 1.5 seconds
+    };
+
     return (
         <div className="token-card">
             <div className="rank">#{rank}</div>
             <h3>{token.name || 'Unknown'} ({token.symbol || '???'})</h3>
             <div className="metrics">
-                <div>Address: <span className="address">{token.address}</span></div>
+                <div>
+                    Address:{" "}
+                    <span className="address">{formatAddress(token.address)}</span>
+                    <button 
+                        className={`copy-button ${copyConfirm ? 'copied' : ''}`}
+                        onClick={() => copyToClipboard(token.address)}
+                        title={copyConfirm ? 'Copied!' : 'Copy full address'}
+                    >
+                        {copyConfirm ? '✓' : '📋'}
+                    </button>
+                </div>
                 <div>Price: {formatPrice(token.currentPrice)}</div>
                 <div>24h Change: {formatPercentage(token.priceChange24h)}</div>
                 <div>24h Volume: {formatNumber(token.volume24h)}</div>

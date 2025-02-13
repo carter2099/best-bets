@@ -87,4 +87,24 @@
     margin: 16px 0;
     text-align: center;
     border: 1px solid #ef9a9a;
+}
+
+/* Add styles for admin panel */
+.admin-panel {
+    background-color: #f5f5f5;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 20px;
+    margin: 20px;
+}
+
+.admin-panel h2 {
+    color: #333;
+    margin-bottom: 20px;
+}
+
+.admin-controls {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
 } 

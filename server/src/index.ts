@@ -17,13 +17,17 @@ const HELIUS_URL = `https://mainnet.helius-rpc.com/?api-key=${process.env.HELIUS
 const connection = new Connection(HELIUS_URL);
 const tokenScanner = new TokenScanner(LiquidityProvider.MORALIS);
 
-app.post('/api/scan', async (_req: Request, res: Response, next: NextFunction) => {
+app.post('/api/admin/test-scan', async (_req: Request, res: Response, next: NextFunction) => {
     try {
         const results = await scanMemeTokens();
         res.json(results);
     } catch (error) {
         next(error);
     }
+});
+
+app.post('/api/scan', async (_req: Request, res: Response, next: NextFunction) => {
+    res.status(501).json({ message: 'Production scan not yet implemented' });
 });
 
 // Error handling middleware

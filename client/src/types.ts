@@ -9,6 +9,7 @@ export interface Token {
     holderCount: number;
     fdv: number;
     liquidity: number;
+    marketCap: number;
     socialScore: number;
     totalScore: number;
 } 

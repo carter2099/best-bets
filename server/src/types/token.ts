@@ -6,6 +6,7 @@ export interface TokenData {
     volume: number;
     fdv: number;
     liquidity: number;
+    marketCap: number;
     holderCount: number;
     socialScore: number;
     totalScore: number;

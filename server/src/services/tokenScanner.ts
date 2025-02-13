@@ -244,6 +244,7 @@ class TokenScanner {
                     volume24h: pairData.volume.h24,
                     volume: pairData.volume.h24,
                     fdv: pairData.fdv,
+                    marketCap: pairData.marketCap,
                     liquidity,
                     holderCount,
                     socialScore: 0,

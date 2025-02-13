@@ -4,6 +4,7 @@ export interface TokenData {
     address: string;
     volume24h: number;
     volume: number;
+    fdv: number;
     liquidity: number;
     holderCount: number;
     socialScore: number;

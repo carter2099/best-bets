@@ -40,7 +40,7 @@ function App() {
     return (
         <div className="App">
             <header className="App-header">
-                <h1>Solana Meme Token Scanner</h1>
+                <h1>The Boys in the Trenches™</h1>
                 <ScanButton onClick={handleScan} isLoading={isLoading} />
                 {error && (
                     <div className="error-message">

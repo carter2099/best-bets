@@ -7,7 +7,8 @@ interface TokenCardProps {
 }
 
 function TokenCard({ token, rank }: TokenCardProps) {
-    const formatNumber = (num: number) => {
+    const formatNumber = (num: number | null) => {
+        if (num == null) return '$0.00';
         return new Intl.NumberFormat('en-US', {
             style: 'currency',
             currency: 'USD',
@@ -16,8 +17,18 @@ function TokenCard({ token, rank }: TokenCardProps) {
         }).format(num);
     };
 
-    const formatPercentage = (num: number) => {
+    const formatPercentage = (num: number | null) => {
+        if (num == null) return '0.00%';
         return `${(num * 100).toFixed(2)}%`;
+    };
+
+    const formatPrice = (price: number | null) => {
+        if (price == null) return '$0.00';
+        if (price < 0.01) {
+            // For very small numbers, show up to 8 decimal places
+            return `$${price.toFixed(8)}`;
+        }
+        return formatNumber(price);
     };
 
     return (
@@ -25,13 +36,15 @@ function TokenCard({ token, rank }: TokenCardProps) {
             <div className="rank">#{rank}</div>
             <h3>{token.name || 'Unknown'} ({token.symbol || '???'})</h3>
             <div className="metrics">
-                <div>Price: {formatNumber(token.currentPrice)}</div>
+                <div>Address: <span className="address">{token.address}</span></div>
+                <div>Price: {formatPrice(token.currentPrice)}</div>
                 <div>24h Change: {formatPercentage(token.priceChange24h)}</div>
                 <div>24h Volume: {formatNumber(token.volume24h)}</div>
-                <div>Holders: {token.holderCount.toLocaleString()}</div>
+                <div>Holders: {(token.holderCount || 0).toLocaleString()}</div>
+                <div>FDV: {formatNumber(token.fdv)}</div>
                 <div>Liquidity: {formatNumber(token.liquidity)}</div>
-                <div>Social Score: {token.socialScore.toFixed(2)}</div>
-                <div>Total Score: {token.totalScore.toFixed(2)}</div>
+                {/* <div>Social Score: {token.socialScore.toFixed(2)}</div> */}
+                <div>Total Score: {(token.totalScore || 0).toFixed(2)}</div>
             </div>
         </div>
     );

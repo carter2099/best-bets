@@ -7,6 +7,7 @@ export interface Token {
     volume24h: number;
     volume: number;
     holderCount: number;
+    fdv: number;
     liquidity: number;
     socialScore: number;
     totalScore: number;

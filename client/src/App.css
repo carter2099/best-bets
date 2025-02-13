@@ -43,6 +43,15 @@
     border-radius: 4px;
 }
 
+.token-card .metrics .address {
+    display: inline-block;
+    max-width: 200px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    vertical-align: bottom;
+}
+
 .metrics {
     text-align: left;
     margin-top: 10px;

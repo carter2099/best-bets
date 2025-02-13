@@ -1,6 +1,20 @@
 import { Pool } from 'pg';
 import { TokenData } from '../types/token';
 
+interface TokenRow {
+    address: string;
+    name: string;
+    symbol: string;
+    current_price: number;
+    price_change_24h: number;
+    volume_24h: number;
+    market_cap: number;
+    fdv: number;
+    liquidity: number;
+    holder_count: number;
+    total_score: number;
+}
+
 const pool = new Pool({
     connectionString: process.env.DATABASE_URL
 });
@@ -60,11 +74,11 @@ export class Database {
     }
 
     async getTokensByScanId(scanId: number): Promise<TokenData[]> {
-        const result = await pool.query(
+        const result = await pool.query<TokenRow>(
             'SELECT * FROM tokens WHERE scan_id = $1 ORDER BY rank',
             [scanId]
         );
-        return result.rows.map(row => ({
+        return result.rows.map((row: TokenRow) => ({
             address: row.address,
             name: row.name,
             symbol: row.symbol,

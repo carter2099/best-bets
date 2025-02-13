@@ -21,6 +21,9 @@ services:
       - MORALIS_API_KEY=${MORALIS_API_KEY}
       - HOLDERS_API_KEY=${HOLDERS_API_KEY}
       - HELIUS_API_KEY=${HELIUS_API_KEY}
+    volumes:
+      - ./server/src:/app/src
+      - ./server/nodemon.json:/app/nodemon.json
     depends_on:
       - db
 

@@ -4,6 +4,8 @@ import { Connection } from '@solana/web3.js';
 import { AppError, TokenScanError } from './types/errors';
 import TokenScanner from './services/tokenScanner';
 import { LiquidityProvider } from './types/api';
+import dotenv from 'dotenv';
+dotenv.config();
 
 const app = express();
 const port = 3001;
@@ -11,7 +13,7 @@ const port = 3001;
 app.use(cors());
 app.use(express.json());
 
-const HELIUS_URL = 'https://mainnet.helius-rpc.com/?api-key=b68aa492-c795-4c51-ba9f-70eb323cbf34';
+const HELIUS_URL = `https://mainnet.helius-rpc.com/?api-key=${process.env.HELIUS_API_KEY}`;
 const connection = new Connection(HELIUS_URL);
 const tokenScanner = new TokenScanner(LiquidityProvider.MORALIS);
 

@@ -9,13 +9,17 @@ class TokenScanner {
     private readonly DEX_SCREENER_BASE_URL = 'https://api.dexscreener.com/token-pairs/v1/solana';
     private readonly MORALIS_BASE_URL = 'https://solana-gateway.moralis.io/token/mainnet';
     private readonly HOLDERS_BASE_URL = 'https://data.solanatracker.io';
-    private readonly HOLDERS_API_KEY = '27bad8cd-841f-4875-aa95-0a09a01c974d';
-    //private readonly MORALIS_API_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJub25jZSI6IjYzNjRiNGUxLWMwNTItNDM2My1iZDIwLWFjNjRkYjMzZjczOSIsIm9yZ0lkIjoiNDMxMDg2IiwidXNlcklkIjoiNDQzNDM0IiwidHlwZUlkIjoiOGFiZDY3YjItOTU2MS00MzJlLTkyNzEtZmY2ZmZhNmU3Mjg2IiwidHlwZSI6IlBST0pFQ1QiLCJpYXQiOjE3Mzk0MTQ3NzEsImV4cCI6NDg5NTE3NDc3MX0.0JJFHiaD5ZVM9lenSUT4h8eIP8w7Hls0gKSG5Vmj6u0';
-    private readonly MORALIS_API_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJub25jZSI6IjM0ODVlODg2LTE0MTgtNGIzNy05MGNhLWVhYTcwZGZlMzIxYyIsIm9yZ0lkIjoiNDMxMDkwIiwidXNlcklkIjoiNDQzNDM4IiwidHlwZUlkIjoiNTI0MjRmMzUtZTU1OC00YzhmLTg4NTktMDY5NGQyYWMwZDc5IiwidHlwZSI6IlBST0pFQ1QiLCJpYXQiOjE3Mzk0MTkwOTMsImV4cCI6NDg5NTE3OTA5M30.kSV2aPT9d8sZ7bvbhvGzL8JrEmDFBEkGKVHgGV9PNsM';
+    private readonly HOLDERS_API_KEY = process.env.HOLDERS_API_KEY;
+    private readonly MORALIS_API_KEY = process.env.MORALIS_API_KEY;
     private readonly liquidityProvider: LiquidityProvider;
 
     constructor(liquidityProvider: LiquidityProvider = LiquidityProvider.MORALIS) {
         this.liquidityProvider = liquidityProvider;
+        
+        // Validate required environment variables
+        if (!process.env.HOLDERS_API_KEY || !process.env.MORALIS_API_KEY) {
+            throw new Error('Missing required API keys in environment variables');
+        }
     }
 
     async scanRecentTokens(): Promise<TokenData[]> {
@@ -112,7 +116,6 @@ class TokenScanner {
                 return 0;
             }
 
-            console.log(response.data.pairs);
             const totalLiquidity = response.data.pairs.reduce((sum, pair) => {
                 return sum + (pair.liquidityUsd || 0);
             }, 0);

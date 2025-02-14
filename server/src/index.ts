@@ -55,7 +55,9 @@ app.get('/api/top-tokens', async (_req: Request, res: Response, next: NextFuncti
 
         // Convert decimal strings to numbers in the response
         const formattedTokens = topTokens.rows.map(token => ({
-            ...token,
+            name: token.name,
+            symbol: token.symbol,
+            address: token.address,
             currentPrice: parseFloat(token.current_price),
             priceChange24h: parseFloat(token.price_change_24h),
             volume24h: parseFloat(token.volume_24h),

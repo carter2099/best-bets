@@ -186,50 +186,61 @@ export class TokenAnalyzer {
     }
 
     private calculateTokenScore(pair: DexScreenerPair, liquidity: number, holderCount: number): number {
-        // Update scoring to include holder count
+        // Adjust weights to emphasize important metrics
         const volumeWeight = 0.30;
-        const fdvWeight = 0.20;
-        const liquidityWeight = 0.20;
+        const liquidityWeight = 0.25;
+        const holderWeight = 0.20;
         const txCountWeight = 0.15;
-        const holderWeight = 0.10;
-        const priceActionWeight = 0.05;
+        const priceActionWeight = 0.10;
 
-        // Volume score (normalized by market cap to avoid manipulation)
-        const volumeScore = pair.volume.h24 / (pair.marketCap || 1);
-        console.log(`Volume Score: ${volumeScore.toFixed(4)} (24h volume: $${(pair.volume.h24 || 0).toLocaleString()})`);
+        // Volume score - Compare 24h volume to liquidity (healthy ratio is around 0.1-3x)
+        const volumeToLiquidityRatio = liquidity > 0 ? pair.volume.h24 / liquidity : 0;
+        const volumeScore = Math.min(Math.max(volumeToLiquidityRatio / 3, 0), 1);
+        console.log(`Volume Score: ${volumeScore.toFixed(4)} (Volume/Liquidity ratio: ${volumeToLiquidityRatio.toFixed(2)})`);
 
-        // Transaction count score
-        const txCount = (pair.txns.h24.buys || 0) + (pair.txns.h24.sells || 0);
-        const txScore = Math.min(txCount / 1000, 1);
-        console.log(`Transaction Score: ${txScore.toFixed(4)} (${txCount} transactions in 24h)`);
-
-        // Price action score
-        const priceActionScore = Math.min(Math.abs(pair.priceChange.h24 || 0) / 100, 1);
-        console.log(`Price Action Score: ${priceActionScore.toFixed(4)} (${pair.priceChange.h24 || 0}% change)`);
-
-        // FDV score - lower ratio of FDV to market cap is better
-        const fdvToMcapRatio = pair.marketCap ? (pair.fdv || 0) / pair.marketCap : Infinity;
-        const fdvScore = Math.max(0, 1 - (fdvToMcapRatio - 1));
-        console.log(`FDV Score: ${fdvScore.toFixed(4)} (FDV/MCap ratio: ${fdvToMcapRatio.toFixed(2)})`);
-
-        // Liquidity score
-        const liquidityScore = Math.min((liquidity || 0) / 100000, 1); // Cap at $100k liquidity
+        // Liquidity score - Use logarithmic scale to evaluate liquidity
+        // Score of 1.0 at $1M liquidity, 0.5 at $100k, 0.25 at $10k
+        const liquidityScore = liquidity > 0 ? 
+            Math.min(Math.log10(liquidity) / Math.log10(1000000), 1) : 0;
         console.log(`Liquidity Score: ${liquidityScore.toFixed(4)} ($${(liquidity || 0).toLocaleString()})`);
 
-        // Holder score (normalize against a target of 1000 holders)
-        const holderScore = Math.min((holderCount || 0) / 1000, 1);
+        // Holder score - Logarithmic scale, 1.0 at 1000 holders, 0.5 at 100 holders
+        const holderScore = holderCount > 0 ? 
+            Math.min(Math.log10(holderCount) / Math.log10(1000), 1) : 0;
         console.log(`Holder Score: ${holderScore.toFixed(4)} (${(holderCount || 0).toLocaleString()} holders)`);
 
+        // Transaction count score - Logarithmic scale
+        // Score of 1.0 at 1000 transactions, 0.5 at 100 transactions
+        const txCount = (pair.txns.h24.buys || 0) + (pair.txns.h24.sells || 0);
+        const txScore = txCount > 0 ? 
+            Math.min(Math.log10(txCount) / Math.log10(1000), 1) : 0;
+        console.log(`Transaction Score: ${txScore.toFixed(4)} (${txCount} transactions in 24h)`);
+
+        // Price action score - Penalize extreme price movements
+        // Optimal range is -20% to +50%, with penalties for extreme movements
+        const priceChange = pair.priceChange.h24 || 0;
+        let priceActionScore = 0;
+        if (priceChange >= -20 && priceChange <= 50) {
+            // Normal range - higher score for moderate gains
+            priceActionScore = 1 - (Math.abs(priceChange - 15) / 35);
+        } else {
+            // Penalty for extreme movements
+            priceActionScore = Math.max(0, 1 - (Math.abs(priceChange) / 100));
+        }
+        console.log(`Price Action Score: ${priceActionScore.toFixed(4)} (${priceChange}% change)`);
+
+        // Calculate total score
         const totalScore = (
             volumeScore * volumeWeight +
-            fdvScore * fdvWeight +
             liquidityScore * liquidityWeight +
-            txScore * txCountWeight +
             holderScore * holderWeight +
+            txScore * txCountWeight +
             priceActionScore * priceActionWeight
         );
 
-        console.log(`Final Score: ${totalScore.toFixed(4)}`);
-        return totalScore;
+        // Multiply by 100 to make it more readable
+        const finalScore = totalScore * 100;
+        console.log(`Final Score: ${finalScore.toFixed(2)}`);
+        return finalScore;
     }
 } 

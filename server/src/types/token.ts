@@ -21,6 +21,8 @@ export interface TokenAnalysis {
     liquidity: number;
     holderCount: number;
     totalScore: number;
+    priceChange24h: number;
+    fdv: number;
 }
 
 export interface RawTokenTransaction {

@@ -55,8 +55,8 @@ function App() {
     return (
         <div className="App">
             <header className="App-header">
-                <h1>Best Bets</h1>
-                <p>Top 20 Most Promising Tokens</p>
+                <h1>The Boys in the Trenches™</h1>
+                <p>Top 20 Juicers</p>
             </header>
             
             {error && (

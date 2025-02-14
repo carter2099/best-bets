@@ -35,7 +35,8 @@ export class BackgroundJobService {
                 const tokensReceived: JupiterToken[] = await tokenScanner.getNewTokens();
                 
                 // Limit to 20 tokens for testing
-                const tokens = tokensReceived.slice(tokensReceived.length-20, tokensReceived.length);
+                //const tokens = tokensReceived.slice(tokensReceived.length-20, tokensReceived.length);
+                const tokens = tokensReceived;
                 console.log(`Processing ${tokens.length} tokens out of ${tokensReceived.length} from Jupiter API`);
                 
                 let processedCount = 0;
@@ -91,22 +92,22 @@ export class BackgroundJobService {
                 // Store current metrics in history
                 await this.db.query(
                     `INSERT INTO token_metrics_history 
-                     (token_id, price, volume_24h, market_cap, liquidity, holder_count, total_score)
-                     VALUES ($1, $2, $3, $4, $5, $6, $7)`,
-                    [token.id, analysis.price, analysis.volume24h, analysis.marketCap, 
-                     analysis.liquidity, analysis.holderCount, analysis.totalScore]
+                     (token_id, price, price_change_24h, volume_24h, market_cap, fdv, liquidity, holder_count, total_score)
+                     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
+                    [token.id, analysis.price, analysis.priceChange24h, analysis.volume24h, analysis.marketCap,
+                     analysis.fdv, analysis.liquidity, analysis.holderCount, analysis.totalScore]
                 );
 
                 // Update token
                 await this.db.query(
                     `UPDATE tokens 
-                     SET current_price = $1, volume_24h = $2, market_cap = $3,
-                         liquidity = $4, holder_count = $5, total_score = $6,
+                     SET current_price = $1, price_change_24h = $2, volume_24h = $3, market_cap = $4,
+                         fdv = $5, liquidity = $6, holder_count = $7, total_score = $8,
                          needs_analysis = false, last_analysis_timestamp = NOW(),
                          is_new = false, updated_at = NOW()
-                     WHERE id = $7`,
-                    [analysis.price, analysis.volume24h, analysis.marketCap,
-                     analysis.liquidity, analysis.holderCount, analysis.totalScore,
+                     WHERE id = $9`,
+                    [analysis.price, analysis.priceChange24h, analysis.volume24h, analysis.marketCap,
+                     analysis.fdv, analysis.liquidity, analysis.holderCount, analysis.totalScore,
                      token.id]
                 );
 

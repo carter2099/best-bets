@@ -44,7 +44,9 @@ export class TokenAnalyzer {
                     marketCap: 0,
                     liquidity: 0,
                     holderCount: 0,
-                    totalScore: 0
+                    totalScore: 0,
+                    priceChange24h: 0,
+                    fdv: 0
                 };
             }
 
@@ -57,7 +59,9 @@ export class TokenAnalyzer {
                 marketCap: pairData.marketCap || 0,
                 liquidity,
                 holderCount,
-                totalScore
+                totalScore,
+                priceChange24h: pairData.priceChange.h24 || 0,
+                fdv: pairData.fdv || 0
             };
         } catch (error) {
             console.error(`Error analyzing token ${token.name} (${token.address}):`, error instanceof Error ? error.message : 'Unknown error');
@@ -186,51 +190,65 @@ export class TokenAnalyzer {
     }
 
     private calculateTokenScore(pair: DexScreenerPair, liquidity: number, holderCount: number): number {
-        // Adjust weights to emphasize important metrics
-        const volumeWeight = 0.30;
-        const liquidityWeight = 0.25;
-        const holderWeight = 0.20;
+        const volumeWeight = 0.20;
+        const liquidityWeight = 0.35;
+        const holderWeight = 0.15;
         const txCountWeight = 0.15;
-        const priceActionWeight = 0.10;
+        const priceActionWeight = 0.05; 
 
         // Volume score - Compare 24h volume to liquidity (healthy ratio is around 0.1-3x)
         const volumeToLiquidityRatio = liquidity > 0 ? pair.volume.h24 / liquidity : 0;
         const volumeScore = Math.min(Math.max(volumeToLiquidityRatio / 3, 0), 1);
         console.log(`Volume Score: ${volumeScore.toFixed(4)} (Volume/Liquidity ratio: ${volumeToLiquidityRatio.toFixed(2)})`);
 
-        // Liquidity score - Use logarithmic scale to evaluate liquidity
-        // Score of 1.0 at $1M liquidity, 0.5 at $100k, 0.25 at $10k
+        // Liquidity score - Much stricter requirements
+        // Now requires $1M for 1.0 score, $100k for 0.5 score
         const liquidityScore = liquidity > 0 ? 
             Math.min(Math.log10(liquidity) / Math.log10(1000000), 1) : 0;
         console.log(`Liquidity Score: ${liquidityScore.toFixed(4)} ($${(liquidity || 0).toLocaleString()})`);
 
-        // Holder score - Logarithmic scale, 1.0 at 1000 holders, 0.5 at 100 holders
+        // Holder score - Require more holders for good score
+        // Now requires 1000 holders for 1.0 score, 100 for 0.5 score
         const holderScore = holderCount > 0 ? 
             Math.min(Math.log10(holderCount) / Math.log10(1000), 1) : 0;
         console.log(`Holder Score: ${holderScore.toFixed(4)} (${(holderCount || 0).toLocaleString()} holders)`);
 
-        // Transaction count score - Logarithmic scale
-        // Score of 1.0 at 1000 transactions, 0.5 at 100 transactions
+        // Transaction count score
         const txCount = (pair.txns.h24.buys || 0) + (pair.txns.h24.sells || 0);
         const txScore = txCount > 0 ? 
             Math.min(Math.log10(txCount) / Math.log10(1000), 1) : 0;
         console.log(`Transaction Score: ${txScore.toFixed(4)} (${txCount} transactions in 24h)`);
 
-        // Price action score - Penalize extreme price movements
-        // Optimal range is -20% to +50%, with penalties for extreme movements
+        // Price action scoring with normalized values and more favorable positive movements
         const priceChange = pair.priceChange.h24 || 0;
         let priceActionScore = 0;
-        if (priceChange >= -20 && priceChange <= 50) {
-            // Normal range - higher score for moderate gains
-            priceActionScore = 1 - (Math.abs(priceChange - 15) / 35);
+
+        if (priceChange > 0) {
+            // Positive price movement - more generous scoring for gains
+            if (priceChange <= 50) {
+                // Linear increase up to 50%, reaching score of 1.0
+                priceActionScore = Math.min(priceChange / 50, 1);
+            } else {
+                // Gradual decrease for gains above 50%, but maintain higher minimum
+                priceActionScore = Math.max(0.5, 1 - ((priceChange - 50) / 150));
+            }
         } else {
-            // Penalty for extreme movements
-            priceActionScore = Math.max(0, 1 - (Math.abs(priceChange) / 100));
+            // Negative price movement - normalized penalties
+            const normalizedDrop = Math.abs(priceChange);
+            
+            if (normalizedDrop <= 10) {
+                // Linear reduction up to 10% drop
+                priceActionScore = Math.max(0, 1 - (normalizedDrop / 10));
+            } else {
+                // Smooth decay for larger drops, ensuring score stays between 0 and 1
+                priceActionScore = Math.max(0, Math.exp(-0.15 * (normalizedDrop - 10)) * 0.5);
+            }
         }
+
         console.log(`Price Action Score: ${priceActionScore.toFixed(4)} (${priceChange}% change)`);
 
-        // Calculate total score
-        const totalScore = (
+        // Calculate initial score
+        let totalScore = (
             volumeScore * volumeWeight +
             liquidityScore * liquidityWeight +
             holderScore * holderWeight +
@@ -238,9 +256,31 @@ export class TokenAnalyzer {
             priceActionScore * priceActionWeight
         );
 
+        // Apply harsh penalties based on price drops
+        if (priceChange < 0) {
+            const dropPenaltyFactor = Math.abs(priceChange) / 100;
+            // Exponential penalty that gets worse as the drop increases
+            const penaltyMultiplier = Math.exp(-dropPenaltyFactor * 2);
+            totalScore *= penaltyMultiplier;
+
+            // Additional severe penalties for bigger drops
+            if (priceChange < -10) totalScore *= 0.7;
+            if (priceChange < -20) totalScore *= 0.5;
+            if (priceChange < -30) totalScore *= 0.3;
+            if (priceChange < -50) totalScore *= 0.1;
+            if (priceChange < -70) totalScore *= 0.01;
+        }
+
         // Multiply by 100 to make it more readable
         const finalScore = totalScore * 100;
-        console.log(`Final Score: ${finalScore.toFixed(2)}`);
+
+        // Add detailed logging for price-related penalties
+        console.log(`Price Details:
+            Base Price Score: ${priceActionScore.toFixed(4)}
+            Price Change: ${priceChange}%
+            Final Score After Penalties: ${finalScore.toFixed(2)}
+        `);
+
         return finalScore;
     }
 } 

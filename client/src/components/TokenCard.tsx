@@ -21,7 +21,7 @@ function TokenCard({ token, rank }: TokenCardProps) {
 
     const formatPercentage = (num: number | null) => {
         if (num == null || isNaN(num)) return '0.00%';
-        return `${(num * 100).toFixed(2)}%`;
+        return `${num.toFixed(2)}%`;
     };
 
     const formatPrice = (price: number | null) => {

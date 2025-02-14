@@ -89,8 +89,8 @@
     border: 1px solid #ef9a9a;
 }
 
-/* Add styles for admin panel */
-.admin-panel {
+/* Update admin panel styles to dev panel */
+.dev-panel {
     background-color: #f5f5f5;
     border: 1px solid #ddd;
     border-radius: 8px;
@@ -99,12 +99,12 @@
     width: 100%;
 }
 
-.admin-panel h2 {
+.dev-panel h2 {
     color: #333;
     margin-bottom: 20px;
 }
 
-.admin-controls {
+.dev-controls {
     display: flex;
     flex-direction: column;
     gap: 16px;

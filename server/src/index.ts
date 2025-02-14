@@ -18,7 +18,7 @@ const HELIUS_URL = `https://mainnet.helius-rpc.com/?api-key=${process.env.HELIUS
 const connection = new Connection(HELIUS_URL);
 const tokenScanner = new TokenScanner(LiquidityProvider.MORALIS);
 
-app.post('/api/admin/test-scan', async (_req: Request, res: Response, next: NextFunction) => {
+app.post('/api/dev/test-scan', async (_req: Request, res: Response, next: NextFunction) => {
     try {
         // Create scan record
         const scanId = await db.createScan('test');
@@ -40,7 +40,7 @@ app.post('/api/scan', async (_req: Request, res: Response, next: NextFunction) =
 });
 
 // Add new endpoint to get scan history
-app.get('/api/admin/scans', async (_req: Request, res: Response, next: NextFunction) => {
+app.get('/api/dev/scans', async (_req: Request, res: Response, next: NextFunction) => {
     try {
         const scans = await db.getScans();
         console.log('Fetched scans:', scans);
@@ -52,7 +52,7 @@ app.get('/api/admin/scans', async (_req: Request, res: Response, next: NextFunct
 });
 
 // Add endpoint to get tokens for a specific scan
-app.get('/api/admin/scans/:scanId/tokens', async (req: Request, res: Response, next: NextFunction) => {
+app.get('/api/dev/scans/:scanId/tokens', async (req: Request, res: Response, next: NextFunction) => {
     try {
         const tokens = await db.getTokensByScanId(parseInt(req.params.scanId));
         res.json(tokens);
@@ -62,7 +62,7 @@ app.get('/api/admin/scans/:scanId/tokens', async (req: Request, res: Response, n
 });
 
 // Add endpoint to clear test scans
-app.delete('/api/admin/scans/test', async (_req: Request, res: Response, next: NextFunction) => {
+app.delete('/api/dev/scans/test', async (_req: Request, res: Response, next: NextFunction) => {
     try {
         await db.clearTestScans();
         res.json({ message: 'Test scans cleared successfully' });

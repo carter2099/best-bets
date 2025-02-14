@@ -11,7 +11,7 @@ interface Scan {
     status: 'completed' | 'failed';
 }
 
-function AdminPanel() {
+function DevPanel() {
     const [tokens, setTokens] = useState<Token[]>([]);
     const [scans, setScans] = useState<Scan[]>([]);
     const [selectedScanId, setSelectedScanId] = useState<number | null>(null);
@@ -26,10 +26,8 @@ function AdminPanel() {
 
     const fetchScans = async () => {
         try {
-            console.log('Fetching scans...');
-            const response = await fetch('http://localhost:3001/api/admin/scans');
+            const response = await fetch('http://localhost:3001/api/dev/scans');
             const data = await response.json();
-            console.log('Received scans:', data);
             setScans(data);
         } catch (error) {
             console.error('Failed to fetch scans:', error);
@@ -41,7 +39,7 @@ function AdminPanel() {
         setError(null);
 
         try {
-            const response = await fetch('http://localhost:3001/api/admin/test-scan', {
+            const response = await fetch('http://localhost:3001/api/dev/test-scan', {
                 method: 'POST'
             });
 
@@ -55,8 +53,7 @@ function AdminPanel() {
             }
 
             setTokens(data);
-            // Refresh scan history after new scan
-            fetchScans();
+            await fetchScans(); // Refresh scan history after new scan
         } catch (error) {
             console.error('Test scan failed:', error);
             setError(error instanceof Error ? error.message : 'An unexpected error occurred');
@@ -67,7 +64,7 @@ function AdminPanel() {
 
     const handleScanSelect = async (scanId: number) => {
         try {
-            const response = await fetch(`http://localhost:3001/api/admin/scans/${scanId}/tokens`);
+            const response = await fetch(`http://localhost:3001/api/dev/scans/${scanId}/tokens`);
             const data = await response.json();
             setTokens(data);
             setSelectedScanId(scanId);
@@ -83,7 +80,7 @@ function AdminPanel() {
 
         setIsClearing(true);
         try {
-            const response = await fetch('http://localhost:3001/api/admin/scans/test', {
+            const response = await fetch('http://localhost:3001/api/dev/scans/test', {
                 method: 'DELETE'
             });
 
@@ -104,9 +101,9 @@ function AdminPanel() {
     };
 
     return (
-        <div className="admin-panel">
-            <h2>Admin Panel</h2>
-            <div className="admin-controls">
+        <div className="dev-panel">
+            <h2>Dev Panel</h2>
+            <div className="dev-controls">
                 <div className="scan-controls">
                     <div className="button-group">
                         <ScanButton 
@@ -159,4 +156,4 @@ function AdminPanel() {
     );
 }
 
-export default AdminPanel; 
+export default DevPanel; 

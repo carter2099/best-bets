@@ -5,14 +5,14 @@ interface TokenRow {
     address: string;
     name: string;
     symbol: string;
-    current_price: number;
-    price_change_24h: number;
-    volume_24h: number;
-    market_cap: number;
-    fdv: number;
-    liquidity: number;
+    current_price: string;
+    price_change_24h: string;
+    volume_24h: string;
+    market_cap: string;
+    fdv: string;
+    liquidity: string;
     holder_count: number;
-    total_score: number;
+    total_score: string;
 }
 
 const pool = new Pool({
@@ -82,17 +82,52 @@ export class Database {
             address: row.address,
             name: row.name,
             symbol: row.symbol,
-            currentPrice: row.current_price,
-            priceChange24h: row.price_change_24h,
-            volume24h: row.volume_24h,
-            marketCap: row.market_cap,
-            fdv: row.fdv,
-            liquidity: row.liquidity,
+            currentPrice: parseFloat(row.current_price),
+            priceChange24h: parseFloat(row.price_change_24h),
+            volume24h: parseFloat(row.volume_24h),
+            marketCap: parseFloat(row.market_cap),
+            fdv: parseFloat(row.fdv),
+            liquidity: parseFloat(row.liquidity),
             holderCount: row.holder_count,
-            totalScore: row.total_score,
-            volume: row.volume_24h,
+            totalScore: parseFloat(row.total_score),
+            volume: parseFloat(row.volume_24h),
             socialScore: 0
         }));
+    }
+
+    async getScans(): Promise<ScanRecord[]> {
+        const result = await pool.query<ScanRecord>(
+            'SELECT * FROM scans ORDER BY scan_date DESC'
+        );
+        return result.rows;
+    }
+
+    async clearTestScans(): Promise<void> {
+        const client = await pool.connect();
+        try {
+            await client.query('BEGIN');
+            
+            // First delete tokens from test scans
+            await client.query(`
+                DELETE FROM tokens 
+                WHERE scan_id IN (
+                    SELECT id FROM scans WHERE scan_type = 'test'
+                )
+            `);
+            
+            // Then delete the test scans
+            await client.query(`
+                DELETE FROM scans 
+                WHERE scan_type = 'test'
+            `);
+            
+            await client.query('COMMIT');
+        } catch (error) {
+            await client.query('ROLLBACK');
+            throw error;
+        } finally {
+            client.release();
+        }
     }
 }
 

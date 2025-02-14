@@ -10,7 +10,7 @@ function TokenCard({ token, rank }: TokenCardProps) {
     const [copyConfirm, setCopyConfirm] = React.useState(false);
 
     const formatNumber = (num: number | null) => {
-        if (num == null) return '$0.00';
+        if (num == null || isNaN(num)) return '$0.00';
         return new Intl.NumberFormat('en-US', {
             style: 'currency',
             currency: 'USD',
@@ -20,12 +20,12 @@ function TokenCard({ token, rank }: TokenCardProps) {
     };
 
     const formatPercentage = (num: number | null) => {
-        if (num == null) return '0.00%';
+        if (num == null || isNaN(num)) return '0.00%';
         return `${(num * 100).toFixed(2)}%`;
     };
 
     const formatPrice = (price: number | null) => {
-        if (price == null) return '$0.00';
+        if (price == null || isNaN(price)) return '$0.00';
         if (price < 0.01) {
             // For very small numbers, show up to 8 decimal places
             return `$${price.toFixed(8)}`;

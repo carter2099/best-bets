@@ -27,8 +27,24 @@ function TokenCard({ token, rank }: TokenCardProps) {
     const formatPrice = (price: number | null) => {
         if (price == null || isNaN(price)) return '$0.00';
         if (price < 0.01) {
-            // For very small numbers, show up to 8 decimal places
-            return `$${price.toFixed(8)}`;
+            // Convert to string and remove scientific notation
+            const priceStr = price.toFixed(20);
+            // Find first non-zero digit after decimal
+            const match = priceStr.match(/\.0*[1-9]/);
+            if (match) {
+                // Get position of first non-zero digit
+                const firstNonZero = match.index! + match[0].length - 1;
+                // Find the next occurrence of three consecutive zeros
+                const afterFirstNonZero = priceStr.slice(firstNonZero + 1);
+                const tripleZeroMatch = afterFirstNonZero.match(/000/);
+                // If found triple zeros, cut off there, otherwise show all remaining digits
+                const additionalDigits: number = tripleZeroMatch 
+                    ? (tripleZeroMatch.index ?? afterFirstNonZero.length)
+                    : afterFirstNonZero.length;
+                const decimalPlaces = firstNonZero - priceStr.indexOf('.') + additionalDigits;
+                return `$${price.toFixed(decimalPlaces)}`;
+            }
+            return '$0.00';
         }
         return formatNumber(price);
     };

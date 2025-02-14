@@ -6,6 +6,10 @@ import TokenScanner from './services/tokenScanner';
 import { LiquidityProvider } from './types/api';
 import dotenv from 'dotenv';
 import { db } from './db';
+import { BackgroundJobService } from './services/backgroundJobs';
+import { JupiterStationAPI } from './services/jupiterStationAPI';
+import { TokenAnalyzer } from './services/tokenAnalyzer';
+
 dotenv.config();
 
 const app = express();
@@ -17,6 +21,56 @@ app.use(express.json());
 const HELIUS_URL = `https://mainnet.helius-rpc.com/?api-key=${process.env.HELIUS_API_KEY}`;
 const connection = new Connection(HELIUS_URL);
 const tokenScanner = new TokenScanner(LiquidityProvider.MORALIS);
+
+// Initialize background services
+const jupiterAPI = new JupiterStationAPI(process.env.JUPITER_API_KEY || '');
+const tokenAnalyzer = new TokenAnalyzer(LiquidityProvider.MORALIS);
+const backgroundJobs = new BackgroundJobService(db.pool, jupiterAPI, tokenAnalyzer);
+
+// Start background jobs when server starts
+backgroundJobs.start().catch(error => {
+    console.error('Failed to start background jobs:', error);
+});
+
+// Endpoint to get top tokens
+app.get('/api/top-tokens', async (_req: Request, res: Response, next: NextFunction) => {
+    try {
+        const topTokens = await db.query(`
+            SELECT 
+                address,
+                name,
+                symbol,
+                COALESCE(current_price, 0) as current_price,
+                COALESCE(price_change_24h, 0) as price_change_24h,
+                COALESCE(volume_24h, 0) as volume_24h,
+                COALESCE(market_cap, 0) as market_cap,
+                COALESCE(fdv, 0) as fdv,
+                COALESCE(liquidity, 0) as liquidity,
+                COALESCE(holder_count, 0) as holder_count,
+                COALESCE(total_score, 0) as total_score
+            FROM tokens 
+            WHERE rank IS NOT NULL 
+            ORDER BY rank ASC`
+        );
+
+        // Convert decimal strings to numbers in the response
+        const formattedTokens = topTokens.rows.map(token => ({
+            ...token,
+            currentPrice: parseFloat(token.current_price),
+            priceChange24h: parseFloat(token.price_change_24h),
+            volume24h: parseFloat(token.volume_24h),
+            marketCap: parseFloat(token.market_cap),
+            fdv: parseFloat(token.fdv),
+            liquidity: parseFloat(token.liquidity),
+            holderCount: parseInt(token.holder_count),
+            totalScore: parseFloat(token.total_score)
+        }));
+
+        res.json(formattedTokens);
+    } catch (error) {
+        next(error);
+    }
+});
 
 app.post('/api/dev/test-scan', async (_req: Request, res: Response, next: NextFunction) => {
     try {
@@ -72,25 +126,28 @@ app.delete('/api/dev/scans/test', async (_req: Request, res: Response, next: Nex
 });
 
 // Error handling middleware
-app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
-    console.error('Error:', err);
-
-    if (err instanceof AppError) {
-        return res.status(err.statusCode).json({
-            status: 'error',
+app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
+    console.error(err);
+    
+    if (err instanceof AppError || err instanceof TokenScanError) {
+        res.status(err.statusCode).json({
             message: err.message
         });
+    } else {
+        res.status(500).json({
+            message: 'An unexpected error occurred'
+        });
     }
+});
 
-    // Handle unexpected errors
-    return res.status(500).json({
-        status: 'error',
-        message: 'An unexpected error occurred'
-    });
+process.on('SIGTERM', () => {
+    console.log('SIGTERM received. Stopping background jobs...');
+    backgroundJobs.stop();
+    process.exit(0);
 });
 
 app.listen(port, () => {
-    console.log(`Server running on port ${port}`);
+    console.log(`Server running at http://localhost:${port}`);
 });
 
 async function scanMemeTokens() {

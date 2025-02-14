@@ -1,76 +1,79 @@
-import React, { useState } from 'react';
+import * as React from 'react';
 import './App.css';
 import TokenList from './components/TokenList';
-import ScanButton from './components/ScanButton';
 import DevPanel from './components/DevPanel';
 import { Token } from './types';
 import { APIError, isAPIError } from './types/errors';
 
 function App() {
-    const [tokens, setTokens] = useState<Token[]>([]);
-    const [isLoading, setIsLoading] = useState<boolean>(false);
-    const [error, setError] = useState<string | null>(null);
-    const [isDevMode, setIsDevMode] = useState(false);
+    const [tokens, setTokens] = React.useState<Token[]>([]);
+    const [isLoading, setIsLoading] = React.useState<boolean>(true);
+    const [error, setError] = React.useState<string | null>(null);
+    const [isDevMode, setIsDevMode] = React.useState(false);
 
-    const handleScan = async () => {
-        setIsLoading(true);
-        setError(null);
-
+    const fetchTopTokens = async () => {
         try {
-            const response = await fetch('http://localhost:3001/api/scan', {
-                method: 'POST'
-            });
-
+            const response = await fetch('http://localhost:3001/api/top-tokens');
             const data = await response.json();
 
             if (!response.ok) {
                 if (isAPIError(data)) {
                     throw new Error(data.message);
                 }
-                throw new Error('Failed to scan tokens');
+                throw new Error('Failed to fetch top tokens');
             }
 
             setTokens(data);
+            setError(null);
         } catch (error) {
-            console.error('Scan failed:', error);
+            console.error('Failed to fetch top tokens:', error);
             setError(error instanceof Error ? error.message : 'An unexpected error occurred');
         } finally {
             setIsLoading(false);
         }
     };
 
+    // Fetch top tokens on mount and every minute
+    React.useEffect(() => {
+        fetchTopTokens();
+        const interval = setInterval(fetchTopTokens, 60000);
+        return () => clearInterval(interval);
+    }, []);
+
     // Secret key combination to toggle dev mode (Ctrl + Shift + A)
     const handleKeyPress = (event: KeyboardEvent) => {
         if (event.ctrlKey && event.shiftKey && event.key === 'A') {
-            setIsDevMode(prev => !prev);
+            setIsDevMode((prev: boolean) => !prev);
         }
     };
 
     React.useEffect(() => {
         document.addEventListener('keydown', handleKeyPress);
-        return () => {
-            document.removeEventListener('keydown', handleKeyPress);
-        };
+        return () => document.removeEventListener('keydown', handleKeyPress);
     }, []);
 
     return (
         <div className="App">
             <header className="App-header">
-                <h1>The Boys in the Trenches™</h1>
-                {isDevMode ? (
-                    <DevPanel />
-                ) : (
-                    <div>
-                        <ScanButton onClick={handleScan} isLoading={isLoading} />
-                        {error && (
-                            <div className="error-message">
-                                {error}
-                            </div>
-                        )}
-                        <TokenList tokens={tokens} />
-                    </div>
-                )}
+                <h1>Best Bets</h1>
+                <p>Top 20 Most Promising Tokens</p>
             </header>
+            
+            {error && (
+                <div className="error-message">
+                    {error}
+                </div>
+            )}
+
+            <main>
+                {isLoading ? (
+                    <div className="loading">Loading top tokens...</div>
+                ) : (
+                    <TokenList tokens={tokens} />
+                )}
+            </main>
+
+            {isDevMode && <DevPanel />}
         </div>
     );
 }

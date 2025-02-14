@@ -1,17 +1,26 @@
 export interface TokenData {
+    address: string;
     name: string;
     symbol: string;
-    address: string;
+    currentPrice: number;
+    priceChange24h: number;
     volume24h: number;
-    volume: number;
+    marketCap: number;
     fdv: number;
     liquidity: number;
-    marketCap: number;
     holderCount: number;
-    socialScore: number;
     totalScore: number;
-    priceChange24h: number;
-    currentPrice: number;
+    volume: number;
+    socialScore: number;
+}
+
+export interface TokenAnalysis {
+    price: number;
+    volume24h: number;
+    marketCap: number;
+    liquidity: number;
+    holderCount: number;
+    totalScore: number;
 }
 
 export interface RawTokenTransaction {

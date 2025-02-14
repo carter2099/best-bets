@@ -27,8 +27,18 @@ export interface ScanRecord {
 }
 
 export class Database {
+    public readonly pool: Pool;
+
+    constructor() {
+        this.pool = pool;
+    }
+
+    async query(text: string, params?: any[]) {
+        return this.pool.query(text, params);
+    }
+
     async createScan(type: 'daily' | 'test'): Promise<number> {
-        const result = await pool.query(
+        const result = await this.pool.query(
             'INSERT INTO scans (scan_type, status) VALUES ($1, $2) RETURNING id',
             [type, 'completed']
         );
@@ -36,7 +46,7 @@ export class Database {
     }
 
     async saveTokens(scanId: number, tokens: TokenData[]): Promise<void> {
-        const client = await pool.connect();
+        const client = await this.pool.connect();
         try {
             await client.query('BEGIN');
 
@@ -67,14 +77,14 @@ export class Database {
     }
 
     async getLatestScan(): Promise<ScanRecord | null> {
-        const result = await pool.query(
+        const result = await this.pool.query(
             'SELECT * FROM scans ORDER BY scan_date DESC LIMIT 1'
         );
         return result.rows[0] || null;
     }
 
     async getTokensByScanId(scanId: number): Promise<TokenData[]> {
-        const result = await pool.query<TokenRow>(
+        const result = await this.pool.query<TokenRow>(
             'SELECT * FROM tokens WHERE scan_id = $1 ORDER BY rank',
             [scanId]
         );
@@ -96,14 +106,14 @@ export class Database {
     }
 
     async getScans(): Promise<ScanRecord[]> {
-        const result = await pool.query<ScanRecord>(
+        const result = await this.pool.query<ScanRecord>(
             'SELECT * FROM scans ORDER BY scan_date DESC'
         );
         return result.rows;
     }
 
     async clearTestScans(): Promise<void> {
-        const client = await pool.connect();
+        const client = await this.pool.connect();
         try {
             await client.query('BEGIN');
             

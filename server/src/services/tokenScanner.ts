@@ -24,19 +24,24 @@ class TokenScanner {
 
     async scanRecentTokens(): Promise<TokenData[]> {
         try {
+            console.log('Starting recent token scan...');
             // Get new tokens from Jupiter
             const newTokens = await this.getNewTokens();
+            console.log(`Retrieved ${newTokens.length} new tokens from Jupiter`);
             
             // Process tokens and maintain top 10
             const topTokens = await this.processTokens(newTokens);
+            console.log(`Processed ${topTokens.length} tokens, filtering for top performers...`);
             
-            return this.sortAndFilterTokens(topTokens);
+            const result = this.sortAndFilterTokens(topTokens);
+            console.log(`Found ${result.length} top performing tokens`);
+            return result;
         } catch (error) {
             throw new TokenScanError(`Failed to scan tokens: ${error instanceof Error ? error.message : 'Unknown error'}`);
         }
     }
 
-    private async getNewTokens(): Promise<JupiterToken[]> {
+    async getNewTokens(): Promise<JupiterToken[]> {
         try {
             const response = await axios.get<JupiterToken[]>(this.JUPITER_NEW_TOKENS_URL);
             return response.data;

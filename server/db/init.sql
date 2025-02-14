@@ -7,8 +7,7 @@ CREATE TABLE scans (
 
 CREATE TABLE tokens (
     id SERIAL PRIMARY KEY,
-    scan_id INTEGER REFERENCES scans(id),
-    address VARCHAR(44) NOT NULL,
+    address VARCHAR(44) NOT NULL UNIQUE,
     name VARCHAR(100),
     symbol VARCHAR(20),
     current_price DECIMAL,
@@ -20,8 +19,27 @@ CREATE TABLE tokens (
     holder_count INTEGER,
     total_score DECIMAL,
     rank INTEGER,
-    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+    needs_analysis BOOLEAN DEFAULT true,
+    last_analysis_timestamp TIMESTAMP,
+    is_new BOOLEAN DEFAULT true,
+    first_seen_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE INDEX idx_tokens_scan_id ON tokens(scan_id);
-CREATE INDEX idx_tokens_address ON tokens(address); 
+CREATE TABLE token_metrics_history (
+    id SERIAL PRIMARY KEY,
+    token_id INTEGER REFERENCES tokens(id),
+    price DECIMAL,
+    volume_24h DECIMAL,
+    market_cap DECIMAL,
+    liquidity DECIMAL,
+    holder_count INTEGER,
+    total_score DECIMAL,
+    recorded_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX idx_tokens_address ON tokens(address);
+CREATE INDEX idx_tokens_needs_analysis ON tokens(needs_analysis) WHERE needs_analysis = true;
+CREATE INDEX idx_tokens_rank ON tokens(rank) WHERE rank IS NOT NULL;
+CREATE INDEX idx_token_metrics_history_token_id ON token_metrics_history(token_id);
+CREATE INDEX idx_token_metrics_history_recorded_at ON token_metrics_history(recorded_at); 

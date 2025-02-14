@@ -6,13 +6,6 @@ import TokenScanner from './services/tokenScanner';
 import { LiquidityProvider } from './types/api';
 import dotenv from 'dotenv';
 import { db } from './db';
-import { createScanRoutes } from './routes/scanRoutes';
-import { ScanController } from './controllers/scanController';
-import { TokenService } from './services/tokenService';
-import { LiquidityService } from './services/liquidityService';
-import { HolderService } from './services/holderService';
-import { PriceService } from './services/priceService';
-import { ScanService } from './services/scanService';
 dotenv.config();
 
 const app = express();
@@ -24,16 +17,6 @@ app.use(express.json());
 const HELIUS_URL = `https://mainnet.helius-rpc.com/?api-key=${process.env.HELIUS_API_KEY}`;
 const connection = new Connection(HELIUS_URL);
 const tokenScanner = new TokenScanner(LiquidityProvider.MORALIS);
-
-// Initialize services
-const liquidityService = new LiquidityService(LiquidityProvider.MORALIS);
-const holderService = new HolderService();
-const priceService = new PriceService();
-const tokenService = new TokenService(liquidityService, holderService, priceService);
-const scanService = new ScanService();
-
-// Initialize controllers
-const scanController = new ScanController(scanService, tokenService);
 
 app.post('/api/dev/test-scan', async (_req: Request, res: Response, next: NextFunction) => {
     try {
@@ -87,9 +70,6 @@ app.delete('/api/dev/scans/test', async (_req: Request, res: Response, next: Nex
         next(error);
     }
 });
-
-// Setup routes
-app.use('/api/dev', createScanRoutes(scanController));
 
 // Error handling middleware
 app.use((err: Error, req: Request, res: Response, next: NextFunction) => {

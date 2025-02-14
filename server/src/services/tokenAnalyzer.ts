@@ -29,12 +29,9 @@ export class TokenAnalyzer {
     async analyzeToken(token: Token): Promise<TokenAnalysis> {
         try {
             console.log(`Getting token data for ${token.name}...`);
-            // Get all the data in parallel
-            const [pairData, liquidity, holderCount] = await Promise.all([
-                this.getDexScreenerData(token),
-                this.getLiquidityData(token),
-                this.getHolderData(token)
-            ]);
+            
+            // Get DEX Screener data first
+            const pairData = await this.getDexScreenerData(token);
 
             if (!pairData) {
                 console.log(`No pair data found for ${token.name}`);
@@ -49,6 +46,30 @@ export class TokenAnalyzer {
                     fdv: 0
                 };
             }
+
+            // Check thresholds before proceeding
+            if (pairData.marketCap < 10000 || pairData.volume.h24 < 2000) {
+                console.log(`Token ${token.name} doesn't meet minimum thresholds:
+                    Market Cap: $${pairData.marketCap}
+                    24h Volume: $${pairData.volume.h24}`);
+                return {
+                    price: parseFloat(pairData.priceUsd),
+                    volume24h: pairData.volume.h24,
+                    marketCap: pairData.marketCap || 0,
+                    liquidity: 0,
+                    holderCount: 0,
+                    totalScore: 0,
+                    priceChange24h: pairData.priceChange.h24 || 0,
+                    fdv: pairData.fdv || 0
+                };
+            }
+
+            // If thresholds are met, get additional data in parallel
+            console.log(`Token ${token.name} meets thresholds, fetching additional data...`);
+            const [liquidity, holderCount] = await Promise.all([
+                this.getLiquidityData(token),
+                this.getHolderData(token)
+            ]);
 
             console.log(`Calculating score for ${token.name}...`);
             const totalScore = this.calculateTokenScore(pairData, liquidity, holderCount);

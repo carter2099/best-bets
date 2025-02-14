@@ -56,7 +56,7 @@ function App() {
         <div className="App">
             <header className="App-header">
                 <h1>The Boys in the Trenches™</h1>
-                <p>Top 20 Juicers</p>
+                <p>Top Juicers</p>
             </header>
             
             {error && (

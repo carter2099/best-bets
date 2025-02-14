@@ -9,7 +9,7 @@ CREATE TABLE tokens (
     id SERIAL PRIMARY KEY,
     address VARCHAR(44) NOT NULL UNIQUE,
     name VARCHAR(100),
-    symbol VARCHAR(20),
+    symbol VARCHAR(50),
     current_price DECIMAL,
     price_change_24h DECIMAL,
     volume_24h DECIMAL,

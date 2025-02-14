@@ -5,6 +5,8 @@ import { sleep } from '../utils';
 import TokenScanner from './tokenScanner';
 import { JupiterToken } from '../types/api';
 
+const MAX_SYMBOL_LENGTH = 50;
+
 export class BackgroundJobService {
     private db: Pool;
     private jupiterAPI: JupiterStationAPI;
@@ -34,22 +36,23 @@ export class BackgroundJobService {
                 const tokenScanner = new TokenScanner();
                 const tokensReceived: JupiterToken[] = await tokenScanner.getNewTokens();
                 
-                // Limit to 20 tokens for testing
-                //const tokens = tokensReceived.slice(tokensReceived.length-20, tokensReceived.length);
                 const tokens = tokensReceived;
                 console.log(`Processing ${tokens.length} tokens out of ${tokensReceived.length} from Jupiter API`);
                 
                 let processedCount = 0;
                 for (const token of tokens) {
+                    // Validate and truncate symbol if necessary
+                    const validatedSymbol = token.symbol?.substring(0, MAX_SYMBOL_LENGTH) || '';
+                    
                     await this.db.query(
                         `INSERT INTO tokens (address, name, symbol, is_new, needs_analysis) 
                          VALUES ($1, $2, $3, true, true)
                          ON CONFLICT (address) DO NOTHING`,
-                        [token.mint, token.name, token.symbol]
+                        [token.mint, token.name, validatedSymbol]
                     );
                     
                     processedCount++;
-                    if (processedCount % 5 === 0) {
+                    if (processedCount % 100 === 0) {
                         console.log(`Processed ${processedCount} out of ${tokens.length} tokens`);
                     }
                 }
